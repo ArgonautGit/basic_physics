@@ -8,7 +8,7 @@ pub trait Motion {
 }
 
 #[allow(dead_code)]
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct MotionState {
     pub position: Position,
     pub velocity: Velocity,
@@ -21,6 +21,18 @@ pub struct MotionState {
 impl Motion for MotionState {
     fn update_motion(&mut self, dt: Time) -> &mut Self {
         self.update_acceleration().update_velocity(dt).update_position(dt)
+    }
+}
+
+impl Default for MotionState {
+    fn default() -> Self {
+        MotionState {
+            acceleration: Position::default(),
+            mass: 1.0,
+            position: Position::default(),
+            forces: Vec::default(),
+            velocity: Velocity::default(),
+        }
     }
 }
 
