@@ -1,4 +1,4 @@
-use super::vector::Vector;
+use crate::motion::vector::Vector;
 
 pub type Position = Vector;
 pub type Velocity = Vector;

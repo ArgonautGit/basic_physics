@@ -1,23 +1,27 @@
-mod units;
-mod vector;
+use crate::units::*;
 
-use units::*;
+pub mod vector;
 
 #[allow(dead_code)]
 pub trait Motion {
-    fn update_motion(state: &mut MotionState, dt: Time) -> &mut MotionState {
-        state.update_acceleration().update_velocity().update_position()
-    }
+    fn update_motion(&mut self, dt: Time) -> &mut Self;
 }
 
 #[allow(dead_code)]
+#[derive(Default, Debug)]
 pub struct MotionState {
-    position: Position,
-    velocity: Velocity,
-    acceleration: Acceleration,
-    forces: Vec<Force>,
+    pub position: Position,
+    pub velocity: Velocity,
+    pub acceleration: Acceleration,
+    pub forces: Vec<Force>,
 
-    mass: Mass,
+    pub mass: Mass,
+}
+
+impl Motion for MotionState {
+    fn update_motion(&mut self, dt: Time) -> &mut Self {
+        self.update_acceleration().update_velocity(dt).update_position(dt)
+    }
 }
 
 impl MotionState {
@@ -30,12 +34,14 @@ impl MotionState {
         self
     }
 
-    fn update_velocity(&mut self) -> &mut Self {
-        
+    fn update_velocity(&mut self, dt: Time) -> &mut Self {
+        self.velocity += self.acceleration * dt;
+        self
     }
 
-    fn update_position(&mut self) -> &mut Self {
-        todo!()
+    fn update_position(&mut self, dt: Time) -> &mut Self {
+        self.position += self.velocity * dt;
+        self
     }
 }
 

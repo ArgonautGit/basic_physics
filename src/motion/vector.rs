@@ -1,8 +1,17 @@
 use std::ops::*;
-use super::units::Scalar;
+use crate::units::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Vector(f32, f32);
+
+impl Vector {
+    pub fn new(x: f32, y: f32) -> Self {
+        Vector {
+            0: x,
+            1: y,
+        }
+    }
+}
 
 impl Default for Vector {
     fn default() -> Self {
