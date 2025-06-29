@@ -5,7 +5,8 @@ pub type Velocity = Vector;
 pub type Acceleration = Vector;
 pub type Force = Vector;
 
-pub type Kg = Scalar;
+pub type Mass = Scalar;
+pub type Time = Scalar;
 
 pub type Scalar = f32;
 

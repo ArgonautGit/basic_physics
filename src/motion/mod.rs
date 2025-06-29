@@ -5,7 +5,7 @@ use units::*;
 
 #[allow(dead_code)]
 pub trait Motion {
-    fn update_motion(state: &mut MotionState) -> &mut MotionState {
+    fn update_motion(state: &mut MotionState, dt: Time) -> &mut MotionState {
         state.update_acceleration().update_velocity().update_position()
     }
 }
@@ -17,7 +17,7 @@ pub struct MotionState {
     acceleration: Acceleration,
     forces: Vec<Force>,
 
-    mass: Kg,
+    mass: Mass,
 }
 
 impl MotionState {
@@ -27,11 +27,11 @@ impl MotionState {
             total_acceleration += (*force) / self.mass;
         }
 
-        todo!()
+        self
     }
 
     fn update_velocity(&mut self) -> &mut Self {
-        todo!()
+        
     }
 
     fn update_position(&mut self) -> &mut Self {
