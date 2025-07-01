@@ -38,12 +38,12 @@ impl Default for MotionState {
 
 impl MotionState {
     fn update_acceleration(&mut self) -> &mut Self {
-        let mut total_acceleration = Acceleration::default();
+        self.acceleration = Acceleration::default();
         for force in &self.forces {
-            total_acceleration += (*force) / self.mass;
+            self.acceleration += *force / self.mass;
         }
 
-        self
+        dbg!(self)
     }
 
     fn update_velocity(&mut self, dt: Time) -> &mut Self {
