@@ -67,8 +67,8 @@ impl Mul<Scalar> for Vector {
 
     fn mul(self, rhs: Scalar) -> Self::Output {
         let mut vector = Vector::default();
-        vector.0 *= rhs;
-        vector.1 *= rhs;
+        vector.0 = self.0 / rhs;
+        vector.1 = self.1 / rhs;
         vector
     }
 }
@@ -85,8 +85,8 @@ impl Div<Scalar> for Vector {
 
     fn div(self, rhs: Scalar) -> Self::Output {
         let mut vector = Vector::default();
-        vector.0 /= rhs;
-        vector.1 /= rhs;
+        vector.0 = self.0 / rhs;
+        vector.1 = self.1 / rhs;
         vector
     }
 }
