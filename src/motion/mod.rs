@@ -1,6 +1,7 @@
 use crate::units::*;
 
 pub mod vector;
+pub mod charge;
 
 #[allow(dead_code)]
 pub trait Motion {

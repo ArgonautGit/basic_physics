@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod drawing;
+
 use eframe::{egui, Frame};
 use egui::{Button, Color32, Pos2};
 
