@@ -33,7 +33,9 @@ export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/android-sdk}"
 export PATH="$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/emulator:$PATH"
 ADB="${ADB:-adb}"
 SERIAL="${ANDROID_SERIAL:-}"
-adb_() { if [ -n "$SERIAL" ]; then "$ADB" -s "$SERIAL" "$@"; else "$ADB" "$@"; fi; }
+# Always give adb an empty stdin: `adb shell`/`adb exec-out` read stdin, which
+# would otherwise swallow the rest of a piped command script.
+adb_() { if [ -n "$SERIAL" ]; then "$ADB" -s "$SERIAL" "$@" </dev/null; else "$ADB" "$@" </dev/null; fi; }
 
 fail=0
 TMP="$(mktemp -d)"
@@ -42,15 +44,21 @@ trap 'rm -rf "$TMP"' EXIT
 # ---- helpers ---------------------------------------------------------------
 
 # Dump the current window to XML at $TMP/window.xml (uiautomator). Returns nonzero
-# on failure (e.g. nothing focusable / dump busy).
+# on failure (nothing focusable, dump busy, or the call exceeds DUMP_TIMEOUT).
+# uiautomator can be slow or get OOM-killed on a heavily loaded software emulator,
+# so we bound it rather than let `tree`/`tap-*` hang.
+DUMP_TIMEOUT="${DUMP_TIMEOUT:-45}"
 dump_xml() {
-  adb_ exec-out uiautomator dump /dev/tty 2>/dev/null \
+  local -a base=("$ADB")
+  [ -n "$SERIAL" ] && base+=(-s "$SERIAL")
+  timeout "$DUMP_TIMEOUT" "${base[@]}" exec-out uiautomator dump /dev/tty </dev/null 2>/dev/null \
     | sed 's/UI hierchary dumped to: \/dev\/tty//' > "$TMP/window.xml"
+  # 124 == timed out: the device is wedged, don't pile on a second slow attempt.
+  [ "${PIPESTATUS[0]}" = 124 ] && return 1
+  grep -q '<hierarchy' "$TMP/window.xml" 2>/dev/null && return 0
   # Some devices only support dumping to a file, not /dev/tty.
-  if ! grep -q '<hierarchy' "$TMP/window.xml" 2>/dev/null; then
-    adb_ shell uiautomator dump /sdcard/window_dump.xml >/dev/null 2>&1 || return 1
-    adb_ exec-out cat /sdcard/window_dump.xml > "$TMP/window.xml" 2>/dev/null || return 1
-  fi
+  timeout "$DUMP_TIMEOUT" "${base[@]}" shell uiautomator dump /sdcard/window_dump.xml </dev/null >/dev/null 2>&1 || return 1
+  adb_ exec-out cat /sdcard/window_dump.xml > "$TMP/window.xml" 2>/dev/null || return 1
   grep -q '<hierarchy' "$TMP/window.xml"
 }
 
@@ -186,9 +194,12 @@ if ! adb_ get-state >/dev/null 2>&1; then
 fi
 
 # ---- read + run script -----------------------------------------------------
+# Slurp the whole script first so adb commands can't consume the command stream.
 SRC="${1:-/dev/stdin}"
+mapfile -t LINES < "$SRC"
+
 lineno=0
-while IFS= read -r line || [ -n "$line" ]; do
+for line in "${LINES[@]}"; do
   lineno=$((lineno+1))
   line="${line#"${line%%[![:space:]]*}"}"   # ltrim
   [ -z "$line" ] && continue
@@ -196,6 +207,6 @@ while IFS= read -r line || [ -n "$line" ]; do
   # Tokenize honoring double quotes.
   eval "set -- $line" 2>/dev/null || { echo "ERR line $lineno: parse error"; fail=1; continue; }
   run_cmd "$@" || fail=1
-done < "$SRC"
+done
 
 exit $fail

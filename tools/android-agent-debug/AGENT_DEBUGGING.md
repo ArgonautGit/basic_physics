@@ -144,6 +144,34 @@ ARM (`arm64-v8a`) and x86_64 native libs both run: the x86_64 image executes
 x86_64 code directly and translates arm64-v8a. A 32-bit-only `armeabi-v7a` APK may
 not — prefer an `arm64-v8a`, `x86_64`, or universal build.
 
+## Performance & stability (software emulation is fragile)
+
+Validated on this container end-to-end: the emulator boots, `screenshot` captures
+the real UI, `tree` returns the parsed hierarchy, and `tap`/`tap-text`/`swipe`/
+`key` drive it. But with no KVM everything runs on QEMU's software CPU + software
+GL, so expect roughness and plan around it:
+
+- **Cold boot takes 10–20 min** and pegs a CPU core the whole time. `sys.boot_completed`
+  flips late — after the package manager is already up. Be patient.
+- **SystemUI throws ANRs** ("System UI isn't responding") under load. Dismiss with
+  `tap` on *Wait*, or just `wait` and re-`screenshot`.
+- **`uiautomator dump` is heavy** — it can take 30–80 s and, under memory pressure
+  during/just after boot, get OOM-killed. The driver bounds it with `DUMP_TIMEOUT`
+  (default 45 s) and returns `ERR` instead of hanging. If `tree`/`tap-text` fails,
+  `wait 3000`, let the screen settle, and retry — or fall back to `screenshot` +
+  `tap <x> <y>` (coordinate taps never need a dump).
+- **The screen can briefly go black** (a ~15 KB screenshot) between transitions
+  while a surface is being drawn. Re-`screenshot` after a `wait`.
+- **Give generous `wait`s** between an interaction and the observation — navigation
+  that's instant on hardware can take several seconds here.
+- **Prefer `-no-snapshot` cold boots** (the scripts do). Snapshots are less reliable
+  in this mode.
+
+None of these are toolkit bugs — they're the cost of running Android without
+hardware virtualization. On a host *with* `/dev/kvm`, switch the image to `x86_64`
+with acceleration (drop `-accel off` in `boot-emulator.sh`) and it's fast and
+stable; the driver commands are identical.
+
 ## Gotchas
 
 - **Boot is slow.** `boot-emulator.sh` waits up to `BOOT_TIMEOUT` (default 900 s).
