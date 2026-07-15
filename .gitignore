@@ -1,3 +1,7 @@
 /target
 Cargo.lock
 .vscode/launch.json
+
+# egui_kittest snapshot byproducts (baselines under tests/snapshots/*.png are committed)
+*.new.png
+*.diff.png

@@ -6,3 +6,10 @@ edition = "2024"
 [dependencies]
 eframe = {version = "0.31.1", default-features = false, features = ["x11", "wgpu"]}
 egui = "0.31.1"
+
+[dev-dependencies]
+egui_kittest = { version = "0.31.1", features = ["eframe", "wgpu", "snapshot"] }
+image = { version = "0.25", features = ["png"] }
+# Version-matched to egui_kittest's transitive pin so the accessibility-tree node
+# type the debug driver walks is the same crate (avoids a duplicate-type error).
+accesskit_consumer = "0.25"
